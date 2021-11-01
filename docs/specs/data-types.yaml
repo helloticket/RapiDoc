@@ -220,6 +220,7 @@ components:
     id:
       type: string
       format: uuid
+      readOnly: true
     person:
       type: object
       required:

@@ -1,128 +1,162 @@
-import { css, LitElement, unsafeCSS } from 'lit-element';
-import marked from 'marked';
-import Prism from 'prismjs';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-yaml';
-import 'prismjs/components/prism-go';
-import 'prismjs/components/prism-java';
-import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-http';
-import 'prismjs/components/prism-csharp';
+import { css, LitElement, unsafeCSS } from "lit-element";
+import marked from "marked";
+import Prism from "prismjs";
+import "prismjs/components/prism-css";
+import "prismjs/components/prism-yaml";
+import "prismjs/components/prism-go";
+import "prismjs/components/prism-java";
+import "prismjs/components/prism-json";
+import "prismjs/components/prism-bash";
+import "prismjs/components/prism-python";
+import "prismjs/components/prism-http";
+import "prismjs/components/prism-csharp";
+import "prismjs/components/prism-php";
+import "prismjs/components/prism-markup-templating";
 
 // Styles
-import FontStyles from '~/styles/font-styles';
-import InputStyles from '~/styles/input-styles';
-import FlexStyles from '~/styles/flex-styles';
-import TableStyles from '~/styles/table-styles';
-import EndpointStyles from '~/styles/endpoint-styles';
-import PrismStyles from '~/styles/prism-styles';
-import TabStyles from '~/styles/tab-styles';
-import NavStyles from '~/styles/nav-styles';
-import InfoStyles from '~/styles/info-styles';
-import CustomStyles from '~/styles/custom-styles';
+import FontStyles from "~/styles/font-styles";
+import InputStyles from "~/styles/input-styles";
+import FlexStyles from "~/styles/flex-styles";
+import TableStyles from "~/styles/table-styles";
+import EndpointStyles from "~/styles/endpoint-styles";
+import PrismStyles from "~/styles/prism-styles";
+import TabStyles from "~/styles/tab-styles";
+import NavStyles from "~/styles/nav-styles";
+import InfoStyles from "~/styles/info-styles";
+import CustomStyles from "~/styles/custom-styles";
 // import { expandCollapseNavBarTag } from '@/templates/navbar-template';
-import { advancedSearch, pathIsInSearch, componentIsInSearch, rapidocApiKey, sleep } from '~/utils/common-utils';
-import ProcessSpec from '~/utils/spec-parser';
-import mainBodyTemplate from '~/templates/main-body-template';
-import { applyApiKey, onClearAllApiKeys } from '~/templates/security-scheme-template';
-import { setApiServer } from '~/templates/server-template';
+import {
+  advancedSearch,
+  pathIsInSearch,
+  componentIsInSearch,
+  rapidocApiKey,
+  sleep,
+} from "~/utils/common-utils";
+import ProcessSpec from "~/utils/spec-parser";
+import mainBodyTemplate from "~/templates/main-body-template";
+import {
+  applyApiKey,
+  onClearAllApiKeys,
+} from "~/templates/security-scheme-template";
+import { setApiServer } from "~/templates/server-template";
 
 export default class RapiDoc extends LitElement {
   constructor() {
     super();
     const intersectionObserverOptions = {
       root: this.getRootNode().host,
-      rootMargin: '-50px 0px -50px 0px', // when the element is visible 100px from bottom
+      rootMargin: "-50px 0px -50px 0px", // when the element is visible 100px from bottom
       threshold: 0,
     };
     this.showSummaryWhenCollapsed = true;
     this.isIntersectionObserverActive = true;
-    this.intersectionObserver = new IntersectionObserver((entries) => { this.onIntersect(entries); }, intersectionObserverOptions);
+    this.intersectionObserver = new IntersectionObserver((entries) => {
+      this.onIntersect(entries);
+    }, intersectionObserverOptions);
   }
 
   static get properties() {
     return {
       // Heading
-      headingText: { type: String, attribute: 'heading-text' },
-      gotoPath: { type: String, attribute: 'goto-path' },
+      headingText: { type: String, attribute: "heading-text" },
+      gotoPath: { type: String, attribute: "goto-path" },
 
       // Spec
-      updateRoute: { type: String, attribute: 'update-route' },
-      routePrefix: { type: String, attribute: 'route-prefix' },
-      specUrl: { type: String, attribute: 'spec-url' },
-      sortTags: { type: String, attribute: 'sort-tags' },
-      generateMissingTags: { type: String, attribute: 'generate-missing-tags' },
-      sortEndpointsBy: { type: String, attribute: 'sort-endpoints-by' },
+      updateRoute: { type: String, attribute: "update-route" },
+      routePrefix: { type: String, attribute: "route-prefix" },
+      specUrl: { type: String, attribute: "spec-url" },
+      sortTags: { type: String, attribute: "sort-tags" },
+      generateMissingTags: { type: String, attribute: "generate-missing-tags" },
+      sortEndpointsBy: { type: String, attribute: "sort-endpoints-by" },
       specFile: { type: String, attribute: false },
 
       // UI Layouts
       layout: { type: String },
-      renderStyle: { type: String, attribute: 'render-style' },
-      defaultSchemaTab: { type: String, attribute: 'default-schema-tab' },
-      responseAreaHeight: { type: String, attribute: 'response-area-height' },
-      fillRequestFieldsWithExample: { type: String, attribute: 'fill-request-fields-with-example' },
-      onNavTagClick: { type: String, attribute: 'on-nav-tag-click' },
+      renderStyle: { type: String, attribute: "render-style" },
+      defaultSchemaTab: { type: String, attribute: "default-schema-tab" },
+      responseAreaHeight: { type: String, attribute: "response-area-height" },
+      fillRequestFieldsWithExample: {
+        type: String,
+        attribute: "fill-request-fields-with-example",
+      },
+      onNavTagClick: { type: String, attribute: "on-nav-tag-click" },
 
       // Schema Styles
-      schemaStyle: { type: String, attribute: 'schema-style' },
-      schemaExpandLevel: { type: Number, attribute: 'schema-expand-level' },
-      schemaDescriptionExpanded: { type: String, attribute: 'schema-description-expanded' },
-      schemaHideReadOnly: { type: String, attribute: 'schema-hide-read-only' },
-      schemaHideWriteOnly: { type: String, attribute: 'schema-hide-write-only' },
+      schemaStyle: { type: String, attribute: "schema-style" },
+      schemaExpandLevel: { type: Number, attribute: "schema-expand-level" },
+      schemaDescriptionExpanded: {
+        type: String,
+        attribute: "schema-description-expanded",
+      },
+      schemaHideReadOnly: { type: String, attribute: "schema-hide-read-only" },
+      schemaHideWriteOnly: {
+        type: String,
+        attribute: "schema-hide-write-only",
+      },
 
       // API Server
-      apiKeyName: { type: String, attribute: 'api-key-name' },
-      apiKeyLocation: { type: String, attribute: 'api-key-location' },
-      apiKeyValue: { type: String, attribute: 'api-key-value' },
-      defaultApiServerUrl: { type: String, attribute: 'default-api-server' },
-      serverUrl: { type: String, attribute: 'server-url' },
-      oauthReceiver: { type: String, attribute: 'oauth-receiver' },
+      apiKeyName: { type: String, attribute: "api-key-name" },
+      apiKeyLocation: { type: String, attribute: "api-key-location" },
+      apiKeyValue: { type: String, attribute: "api-key-value" },
+      defaultApiServerUrl: { type: String, attribute: "default-api-server" },
+      serverUrl: { type: String, attribute: "server-url" },
+      oauthReceiver: { type: String, attribute: "oauth-receiver" },
 
       // Hide/Show Sections & Enable Disable actions
-      showHeader: { type: String, attribute: 'show-header' },
-      showSideNav: { type: String, attribute: 'show-side-nav' },
-      showInfo: { type: String, attribute: 'show-info' },
-      allowAuthentication: { type: String, attribute: 'allow-authentication' },
-      allowTry: { type: String, attribute: 'allow-try' },
-      allowSpecUrlLoad: { type: String, attribute: 'allow-spec-url-load' },
-      allowSpecFileLoad: { type: String, attribute: 'allow-spec-file-load' },
-      allowSpecFileDownload: { type: String, attribute: 'allow-spec-file-download' },
-      allowSearch: { type: String, attribute: 'allow-search' },
-      allowAdvancedSearch: { type: String, attribute: 'allow-advanced-search' },
-      allowServerSelection: { type: String, attribute: 'allow-server-selection' },
-      allowSchemaDescriptionExpandToggle: { type: String, attribute: 'allow-schema-description-expand-toggle' },
-      showComponents: { type: String, attribute: 'show-components' },
-      pageDirection: { type: String, attribute: 'page-direction' },
+      showHeader: { type: String, attribute: "show-header" },
+      showSideNav: { type: String, attribute: "show-side-nav" },
+      showInfo: { type: String, attribute: "show-info" },
+      allowAuthentication: { type: String, attribute: "allow-authentication" },
+      allowTry: { type: String, attribute: "allow-try" },
+      allowSpecUrlLoad: { type: String, attribute: "allow-spec-url-load" },
+      allowSpecFileLoad: { type: String, attribute: "allow-spec-file-load" },
+      allowSpecFileDownload: {
+        type: String,
+        attribute: "allow-spec-file-download",
+      },
+      allowSearch: { type: String, attribute: "allow-search" },
+      allowAdvancedSearch: { type: String, attribute: "allow-advanced-search" },
+      allowServerSelection: {
+        type: String,
+        attribute: "allow-server-selection",
+      },
+      allowSchemaDescriptionExpandToggle: {
+        type: String,
+        attribute: "allow-schema-description-expand-toggle",
+      },
+      showComponents: { type: String, attribute: "show-components" },
+      pageDirection: { type: String, attribute: "page-direction" },
 
       // Main Colors and Font
       theme: { type: String },
-      bgColor: { type: String, attribute: 'bg-color' },
-      textColor: { type: String, attribute: 'text-color' },
-      headerColor: { type: String, attribute: 'header-color' },
-      primaryColor: { type: String, attribute: 'primary-color' },
-      fontSize: { type: String, attribute: 'font-size' },
-      regularFont: { type: String, attribute: 'regular-font' },
-      monoFont: { type: String, attribute: 'mono-font' },
-      loadFonts: { type: String, attribute: 'load-fonts' },
+      bgColor: { type: String, attribute: "bg-color" },
+      textColor: { type: String, attribute: "text-color" },
+      headerColor: { type: String, attribute: "header-color" },
+      primaryColor: { type: String, attribute: "primary-color" },
+      fontSize: { type: String, attribute: "font-size" },
+      regularFont: { type: String, attribute: "regular-font" },
+      monoFont: { type: String, attribute: "mono-font" },
+      loadFonts: { type: String, attribute: "load-fonts" },
 
       // Nav Bar Colors
-      navBgColor: { type: String, attribute: 'nav-bg-color' },
-      navTextColor: { type: String, attribute: 'nav-text-color' },
-      navHoverBgColor: { type: String, attribute: 'nav-hover-bg-color' },
-      navHoverTextColor: { type: String, attribute: 'nav-hover-text-color' },
-      navAccentColor: { type: String, attribute: 'nav-accent-color' },
-      navItemSpacing: { type: String, attribute: 'nav-item-spacing' },
-      usePathInNavBar: { type: String, attribute: 'use-path-in-nav-bar' },
-      infoDescriptionHeadingsInNavBar: { type: String, attribute: 'info-description-headings-in-navbar' },
+      navBgColor: { type: String, attribute: "nav-bg-color" },
+      navTextColor: { type: String, attribute: "nav-text-color" },
+      navHoverBgColor: { type: String, attribute: "nav-hover-bg-color" },
+      navHoverTextColor: { type: String, attribute: "nav-hover-text-color" },
+      navAccentColor: { type: String, attribute: "nav-accent-color" },
+      navItemSpacing: { type: String, attribute: "nav-item-spacing" },
+      usePathInNavBar: { type: String, attribute: "use-path-in-nav-bar" },
+      infoDescriptionHeadingsInNavBar: {
+        type: String,
+        attribute: "info-description-headings-in-navbar",
+      },
 
       // Fetch Options
-      fetchCredentials: { type: String, attribute: 'fetch-credentials' },
+      fetchCredentials: { type: String, attribute: "fetch-credentials" },
 
       // Filters
-      matchPaths: { type: String, attribute: 'match-paths' },
-      matchType: { type: String, attribute: 'match-type' },
+      matchPaths: { type: String, attribute: "match-paths" },
+      matchType: { type: String, attribute: "match-type" },
 
       // Internal Properties
       loading: { type: Boolean }, // indicates spec is being loaded
@@ -144,226 +178,244 @@ export default class RapiDoc extends LitElement {
       NavStyles,
       InfoStyles,
       css`
-      :host {
-        display:flex;
-        flex-direction: column;
-        min-width:360px;
-        width:100%;
-        height:100%;
-        margin:0;
-        padding:0;
-        overflow: hidden;
-        letter-spacing:normal;
-        color:var(--fg);
-        background-color:var(--bg);
-        font-family:var(--font-regular);
-      }
-      .body {
-        display:flex;
-        height:100%;
-        width:100%;
-        overflow:hidden;
-      }
-
-      .main-content { 
-        margin:0;
-        padding: 0; 
-        display:block;
-        flex:1;
-        height:100%;
-        overflow-y: auto;
-        overflow-x: hidden;
-        scrollbar-width: thin;
-        scrollbar-color: var(--border-color) transparent;
-      }
-
-      .main-content-inner--view-mode {
-        padding: 0 8px;
-      }
-      .main-content::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      .main-content::-webkit-scrollbar-track {
-        background:transparent;
-      }
-      .main-content::-webkit-scrollbar-thumb {
-        background-color: var(--border-color);
-      }
-
-      .section-gap.section-tag {
-        border-bottom:1px solid var(--border-color);
-      }
-      .section-gap,
-      .section-gap--focused-mode,
-      .section-gap--read-mode { 
-        padding: 0px 4px; 
-      }
-      .section-tag-header {
-        position:relative;
-        cursor: n-resize;
-        padding: 12px 0;
-      }
-      .collapsed .section-tag-header:hover{
-        cursor: s-resize;
-      }
-
-      .section-tag-header:hover{
-        background-image: linear-gradient(to right, rgba(0,0,0,0), var(--border-color), rgba(0,0,0,0));
-      }
-
-      .section-tag-header:hover::after {
-        position:absolute;
-        margin-left:-24px;
-        font-size:20px;
-        top: calc(50% - 14px);
-        color:var(--primary-color);
-        content: '⬆'; 
-      }
-
-      .collapsed .section-tag-header::after {
-        position:absolute;
-        margin-left:-24px;
-        font-size:20px;
-        top: calc(50% - 14px);
-        color: var(--border-color);
-        content: '⬇'; 
-      }
-      .collapsed .section-tag-header:hover::after {
-        color:var(--primary-color);
-      }
-
-      .collapsed .section-tag-body {
-        display:none;
-      }
-
-      .logo {
-        height:36px;
-        width:36px;
-        margin-left:5px; 
-      }
-      .only-large-screen-flex,
-      .only-large-screen{
-        display:none;
-      }
-      .tag.title {
-        text-transform: uppercase;
-      }
-      .header {
-        background-color:var(--header-bg);
-        color:var(--header-fg);
-        width:100%;
-      }
-      .header-title {
-        font-size:calc(var(--font-size-regular) + 8px); 
-        padding:0 8px;
-      }
-      input.header-input{
-        background:var(--header-color-darker);
-        color:var(--header-fg);
-        border:1px solid var(--header-color-border);
-        flex:1; 
-        padding-right:24px;
-        border-radius:3px;
-      }
-      input.header-input::placeholder {
-        opacity:0.4;
-      }
-      .loader {
-        margin: 16px auto 16px auto; 
-        border: 4px solid var(--bg3);
-        border-radius: 50%;
-        border-top: 4px solid var(--primary-color);
-        width: 36px;
-        height: 36px;
-        animation: spin 2s linear infinite;
-      }
-      .expanded-endpoint-body{ 
-        position: relative;
-        padding: 6px 0px; 
-      }
-      .expanded-endpoint-body.deprecated{ filter:opacity(0.6); }
-      .divider { 
-        border-top: 2px solid var(--border-color);
-        margin: 24px 0;
-        width:100%;
-      }
-
-      .tooltip {
-        cursor:pointer;
-        border: 1px solid var(--border-color);
-        border-left-width: 4px;
-        margin-left:2px;
-      }
-      .tooltip a {
-        color: var(--fg2);
-        text-decoration: none;
-      }
-      .tooltip-text {
-        color: var(--fg2);
-        max-width: 400px;
-        position: absolute;
-        z-index:1;
-        background-color: var(--bg2);
-        visibility: hidden;
-
-        overflow-wrap: break-word;
-      }
-      .tooltip:hover {
-        color: var(--primary-color);
-        border-color: var(--primary-color);
-      }
-      .tooltip:hover a:hover {
-        color: var(--primary-color);
-      }
-
-      .tooltip:hover .tooltip-text {
-        visibility: visible;
-      }
-
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-
-      @media only screen and (min-width: 768px) {
-        .nav-bar {
-          width: 260px;
-          display:flex;
+        :host {
+          display: flex;
+          flex-direction: column;
+          min-width: 360px;
+          width: 100%;
+          height: 100%;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          letter-spacing: normal;
+          color: var(--fg);
+          background-color: var(--bg);
+          font-family: var(--font-regular);
         }
-        .only-large-screen{
-          display:block;
+        .body {
+          display: flex;
+          height: 100%;
+          width: 100%;
+          overflow: hidden;
         }
-        .only-large-screen-flex{
-          display:flex;
+
+        .main-content {
+          margin: 0;
+          padding: 0;
+          display: block;
+          flex: 1;
+          height: 100%;
+          overflow-y: auto;
+          overflow-x: hidden;
+          scrollbar-width: thin;
+          scrollbar-color: var(--border-color) transparent;
         }
-        .section-gap { 
-          padding: 0 0 0 24px; 
+
+        .main-content-inner--view-mode {
+          padding: 0 8px;
         }
-        .section-gap--focused-mode {
-          padding: 24px 8px; 
+        .main-content::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
         }
-        .section-gap--read-mode { 
-          padding: 24px 8px; 
+        .main-content::-webkit-scrollbar-track {
+          background: transparent;
         }
-        .endpoint-body {
+        .main-content::-webkit-scrollbar-thumb {
+          background-color: var(--border-color);
+        }
+
+        .section-gap.section-tag {
+          border-bottom: 1px solid var(--border-color);
+        }
+        .section-gap,
+        .section-gap--focused-mode,
+        .section-gap--read-mode {
+          padding: 0px 4px;
+        }
+        .section-tag-header {
           position: relative;
-          padding:36px 0 48px 0;
+          cursor: n-resize;
+          padding: 12px 0;
         }
-      }
+        .collapsed .section-tag-header:hover {
+          cursor: s-resize;
+        }
 
-      @media only screen and (min-width: 1024px) {
-        .nav-bar {
-          width: ${unsafeCSS(this.fontSize === 'default' ? '300px' : this.fontSize === 'large' ? '315px' : '330px')};
-          display:flex;
+        .section-tag-header:hover {
+          background-image: linear-gradient(
+            to right,
+            rgba(0, 0, 0, 0),
+            var(--border-color),
+            rgba(0, 0, 0, 0)
+          );
         }
-        .section-gap--focused-mode { 
-          padding: 12px 80px 12px 80px; 
+
+        .section-tag-header:hover::after {
+          position: absolute;
+          margin-left: -24px;
+          font-size: 20px;
+          top: calc(50% - 14px);
+          color: var(--primary-color);
+          content: "⬆";
         }
-        .section-gap--read-mode { 
-          padding: 24px 80px 12px 80px; 
+
+        .collapsed .section-tag-header::after {
+          position: absolute;
+          margin-left: -24px;
+          font-size: 20px;
+          top: calc(50% - 14px);
+          color: var(--border-color);
+          content: "⬇";
         }
-      }`,
+        .collapsed .section-tag-header:hover::after {
+          color: var(--primary-color);
+        }
+
+        .collapsed .section-tag-body {
+          display: none;
+        }
+
+        .logo {
+          height: 36px;
+          width: 36px;
+          margin-left: 5px;
+        }
+        .only-large-screen-flex,
+        .only-large-screen {
+          display: none;
+        }
+        .tag.title {
+          text-transform: uppercase;
+        }
+        .header {
+          background-color: var(--header-bg);
+          color: var(--header-fg);
+          width: 100%;
+        }
+        .header-title {
+          font-size: calc(var(--font-size-regular) + 8px);
+          padding: 0 8px;
+        }
+        input.header-input {
+          background: var(--header-color-darker);
+          color: var(--header-fg);
+          border: 1px solid var(--header-color-border);
+          flex: 1;
+          padding-right: 24px;
+          border-radius: 3px;
+        }
+        input.header-input::placeholder {
+          opacity: 0.4;
+        }
+        .loader {
+          margin: 16px auto 16px auto;
+          border: 4px solid var(--bg3);
+          border-radius: 50%;
+          border-top: 4px solid var(--primary-color);
+          width: 36px;
+          height: 36px;
+          animation: spin 2s linear infinite;
+        }
+        .expanded-endpoint-body {
+          position: relative;
+          padding: 6px 0px;
+        }
+        .expanded-endpoint-body.deprecated {
+          filter: opacity(0.6);
+        }
+        .divider {
+          border-top: 2px solid var(--border-color);
+          margin: 24px 0;
+          width: 100%;
+        }
+
+        .tooltip {
+          cursor: pointer;
+          border: 1px solid var(--border-color);
+          border-left-width: 4px;
+          margin-left: 2px;
+        }
+        .tooltip a {
+          color: var(--fg2);
+          text-decoration: none;
+        }
+        .tooltip-text {
+          color: var(--fg2);
+          max-width: 400px;
+          position: absolute;
+          z-index: 1;
+          background-color: var(--bg2);
+          visibility: hidden;
+
+          overflow-wrap: break-word;
+        }
+        .tooltip:hover {
+          color: var(--primary-color);
+          border-color: var(--primary-color);
+        }
+        .tooltip:hover a:hover {
+          color: var(--primary-color);
+        }
+
+        .tooltip:hover .tooltip-text {
+          visibility: visible;
+        }
+
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+
+        @media only screen and (min-width: 768px) {
+          .nav-bar {
+            width: 260px;
+            display: flex;
+          }
+          .only-large-screen {
+            display: block;
+          }
+          .only-large-screen-flex {
+            display: flex;
+          }
+          .section-gap {
+            padding: 0 0 0 24px;
+          }
+          .section-gap--focused-mode {
+            padding: 24px 8px;
+          }
+          .section-gap--read-mode {
+            padding: 24px 8px;
+          }
+          .endpoint-body {
+            position: relative;
+            padding: 36px 0 48px 0;
+          }
+        }
+
+        @media only screen and (min-width: 1024px) {
+          .nav-bar {
+            width: ${unsafeCSS(
+              this.fontSize === "default"
+                ? "300px"
+                : this.fontSize === "large"
+                ? "315px"
+                : "330px"
+            )};
+            display: flex;
+          }
+          .section-gap--focused-mode {
+            padding: 12px 80px 12px 80px;
+          }
+          .section-gap--read-mode {
+            padding: 24px 80px 12px 80px;
+          }
+        }
+      `,
       CustomStyles,
     ];
   }
@@ -373,102 +425,233 @@ export default class RapiDoc extends LitElement {
     super.connectedCallback();
     const parent = this.parentElement;
     if (parent) {
-      if (parent.offsetWidth === 0 && parent.style.width === '') {
-        parent.style.width = '100vw';
+      if (parent.offsetWidth === 0 && parent.style.width === "") {
+        parent.style.width = "100vw";
       }
-      if (parent.offsetHeight === 0 && parent.style.height === '') {
-        parent.style.height = '100vh';
+      if (parent.offsetHeight === 0 && parent.style.height === "") {
+        parent.style.height = "100vh";
       }
-      if (parent.tagName === 'BODY') {
-        if (!parent.style.marginTop) { parent.style.marginTop = '0'; }
-        if (!parent.style.marginRight) { parent.style.marginRight = '0'; }
-        if (!parent.style.marginBottom) { parent.style.marginBottom = '0'; }
-        if (!parent.style.marginLeft) { parent.style.marginLeft = '0'; }
+      if (parent.tagName === "BODY") {
+        if (!parent.style.marginTop) {
+          parent.style.marginTop = "0";
+        }
+        if (!parent.style.marginRight) {
+          parent.style.marginRight = "0";
+        }
+        if (!parent.style.marginBottom) {
+          parent.style.marginBottom = "0";
+        }
+        if (!parent.style.marginLeft) {
+          parent.style.marginLeft = "0";
+        }
       }
     }
 
-    if (this.loadFonts !== 'false') {
+    if (this.loadFonts !== "false") {
       const fontDescriptor = {
-        family: 'Open Sans',
-        style: 'normal',
-        weight: '300',
-        unicodeRange: 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD',
+        family: "Open Sans",
+        style: "normal",
+        weight: "300",
+        unicodeRange:
+          "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
       };
       const fontWeight300 = new FontFace(
-        'Open Sans',
+        "Open Sans",
         "url(https://fonts.gstatic.com/s/opensans/v18/mem5YaGs126MiZpBA-UN_r8OUuhpKKSTjw.woff2) format('woff2')",
-        fontDescriptor,
+        fontDescriptor
       );
-      fontDescriptor.weight = '600';
+      fontDescriptor.weight = "600";
       const fontWeight600 = new FontFace(
-        'Open Sans',
+        "Open Sans",
         "url(https://fonts.gstatic.com/s/opensans/v18/mem5YaGs126MiZpBA-UNirkOUuhpKKSTjw.woff2) format('woff2')",
-        fontDescriptor,
+        fontDescriptor
       );
-      fontWeight300.load().then((font) => { document.fonts.add(font); });
-      fontWeight600.load().then((font) => { document.fonts.add(font); });
+      fontWeight300.load().then((font) => {
+        document.fonts.add(font);
+      });
+      fontWeight600.load().then((font) => {
+        document.fonts.add(font);
+      });
     }
 
-    if (!this.layout || !'row, column,'.includes(`${this.layout},`)) { this.layout = 'row'; }
-    if (!this.renderStyle || !'read, view, focused,'.includes(`${this.renderStyle},`)) { this.renderStyle = 'read'; }
-    if (!this.schemaStyle || !'tree, table,'.includes(`${this.schemaStyle},`)) { this.schemaStyle = 'tree'; }
-    if (!this.theme || !'light, dark,'.includes(`${this.theme},`)) {
-      this.theme = (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+    if (!this.layout || !"row, column,".includes(`${this.layout},`)) {
+      this.layout = "row";
     }
-    if (!this.defaultSchemaTab || !'example, schema, model,'.includes(`${this.defaultSchemaTab},`)) {
-      this.defaultSchemaTab = 'schema';
-    } else if (this.defaultSchemaTab === 'model') {
-      this.defaultSchemaTab = 'schema';
+    if (
+      !this.renderStyle ||
+      !"read, view, focused,".includes(`${this.renderStyle},`)
+    ) {
+      this.renderStyle = "read";
     }
-    if (!this.schemaExpandLevel || this.schemaExpandLevel < 1) { this.schemaExpandLevel = 99999; }
-    if (!this.schemaDescriptionExpanded || !'true, false,'.includes(`${this.schemaDescriptionExpanded},`)) { this.schemaDescriptionExpanded = 'false'; }
-    const writeMethodsWithBody = ['post', 'put', 'patch'];
+    if (!this.schemaStyle || !"tree, table,".includes(`${this.schemaStyle},`)) {
+      this.schemaStyle = "tree";
+    }
+    if (!this.theme || !"light, dark,".includes(`${this.theme},`)) {
+      this.theme =
+        window.matchMedia &&
+        window.matchMedia("(prefers-color-scheme: light)").matches
+          ? "light"
+          : "dark";
+    }
+    if (
+      !this.defaultSchemaTab ||
+      !"example, schema, model,".includes(`${this.defaultSchemaTab},`)
+    ) {
+      this.defaultSchemaTab = "schema";
+    } else if (this.defaultSchemaTab === "model") {
+      this.defaultSchemaTab = "schema";
+    }
+    if (!this.schemaExpandLevel || this.schemaExpandLevel < 1) {
+      this.schemaExpandLevel = 99999;
+    }
+    if (
+      !this.schemaDescriptionExpanded ||
+      !"true, false,".includes(`${this.schemaDescriptionExpanded},`)
+    ) {
+      this.schemaDescriptionExpanded = "false";
+    }
+    const writeMethodsWithBody = ["post", "put", "patch"];
     if (!this.schemaHideReadOnly) {
       this.schemaHideReadOnly = writeMethodsWithBody;
-    } else if (this.schemaHideReadOnly !== 'never') {
-      this.schemaHideReadOnly = writeMethodsWithBody.filter((value) => this.schemaHideReadOnly.includes(value));
+    } else if (this.schemaHideReadOnly !== "never") {
+      this.schemaHideReadOnly = writeMethodsWithBody.filter((value) =>
+        this.schemaHideReadOnly.includes(value)
+      );
       if (this.schemaHideReadOnly.length === 0) {
         this.schemaHideReadOnly = writeMethodsWithBody;
       }
     }
-    this.schemaHideReadOnly += ['get', 'head', 'delete', 'options'];
-    this.schemaHideWriteOnly = this.schemaHideWriteOnly !== 'never';
-    if (!this.fillRequestFieldsWithExample || !'true, false,'.includes(`${this.fillRequestFieldsWithExample},`)) { this.fillRequestFieldsWithExample = 'true'; }
-    if (!this.onNavTagClick || !'expand-collapse, show-description,'.includes(`${this.onNavTagClick},`)) { this.onNavTagClick = 'expand-collapse'; }
+    this.schemaHideReadOnly += ["get", "head", "delete", "options"];
+    this.schemaHideWriteOnly = this.schemaHideWriteOnly !== "never";
+    if (
+      !this.fillRequestFieldsWithExample ||
+      !"true, false,".includes(`${this.fillRequestFieldsWithExample},`)
+    ) {
+      this.fillRequestFieldsWithExample = "true";
+    }
+    if (
+      !this.onNavTagClick ||
+      !"expand-collapse, show-description,".includes(`${this.onNavTagClick},`)
+    ) {
+      this.onNavTagClick = "expand-collapse";
+    }
     if (!this.responseAreaHeight) {
-      this.responseAreaHeight = '300px';
+      this.responseAreaHeight = "300px";
     }
 
-    if (!this.allowSearch || !'true, false,'.includes(`${this.allowSearch},`)) { this.allowSearch = 'true'; }
-    if (!this.allowAdvancedSearch || !'true, false,'.includes(`${this.allowAdvancedSearch},`)) { this.allowAdvancedSearch = 'true'; }
+    if (!this.allowSearch || !"true, false,".includes(`${this.allowSearch},`)) {
+      this.allowSearch = "true";
+    }
+    if (
+      !this.allowAdvancedSearch ||
+      !"true, false,".includes(`${this.allowAdvancedSearch},`)
+    ) {
+      this.allowAdvancedSearch = "true";
+    }
 
-    if (!this.allowTry || !'true, false,'.includes(`${this.allowTry},`)) { this.allowTry = 'true'; }
-    if (!this.apiKeyValue) { this.apiKeyValue = '-'; }
-    if (!this.apiKeyLocation) { this.apiKeyLocation = 'header'; }
-    if (!this.apiKeyName) { this.apiKeyName = ''; }
+    if (!this.allowTry || !"true, false,".includes(`${this.allowTry},`)) {
+      this.allowTry = "true";
+    }
+    if (!this.apiKeyValue) {
+      this.apiKeyValue = "-";
+    }
+    if (!this.apiKeyLocation) {
+      this.apiKeyLocation = "header";
+    }
+    if (!this.apiKeyName) {
+      this.apiKeyName = "";
+    }
 
-    if (!this.oauthReceiver) { this.oauthReceiver = 'oauth-receiver.html'; }
-    if (!this.updateRoute || !'true, false,'.includes(`${this.updateRoute},`)) { this.updateRoute = 'true'; }
-    if (!this.routePrefix) { this.routePrefix = '#'; }
-    if (!this.sortTags || !'true, false,'.includes(`${this.sortTags},`)) { this.sortTags = 'false'; }
-    if (!this.generateMissingTags || !'true, false,'.includes(`${this.generateMissingTags},`)) { this.generateMissingTags = 'false'; }
-    if (!this.sortEndpointsBy || !'method, path, summary, none,'.includes(`${this.sortEndpointsBy},`)) { this.sortEndpointsBy = 'path'; }
-    if (!this.navItemSpacing || !'compact, relaxed, default,'.includes(`${this.navItemSpacing},`)) { this.navItemSpacing = 'default'; }
-    if (!this.usePathInNavBar || !'true, false,'.includes(`${this.usePathInNavBar},`)) { this.usePathInNavBar = 'false'; }
-    if (!this.fontSize || !'default, large, largest,'.includes(`${this.fontSize},`)) { this.fontSize = 'default'; }
+    if (!this.oauthReceiver) {
+      this.oauthReceiver = "oauth-receiver.html";
+    }
+    if (!this.updateRoute || !"true, false,".includes(`${this.updateRoute},`)) {
+      this.updateRoute = "true";
+    }
+    if (!this.routePrefix) {
+      this.routePrefix = "#";
+    }
+    if (!this.sortTags || !"true, false,".includes(`${this.sortTags},`)) {
+      this.sortTags = "false";
+    }
+    if (
+      !this.generateMissingTags ||
+      !"true, false,".includes(`${this.generateMissingTags},`)
+    ) {
+      this.generateMissingTags = "false";
+    }
+    if (
+      !this.sortEndpointsBy ||
+      !"method, path, summary, none,".includes(`${this.sortEndpointsBy},`)
+    ) {
+      this.sortEndpointsBy = "path";
+    }
+    if (
+      !this.navItemSpacing ||
+      !"compact, relaxed, default,".includes(`${this.navItemSpacing},`)
+    ) {
+      this.navItemSpacing = "default";
+    }
+    if (
+      !this.usePathInNavBar ||
+      !"true, false,".includes(`${this.usePathInNavBar},`)
+    ) {
+      this.usePathInNavBar = "false";
+    }
+    if (
+      !this.fontSize ||
+      !"default, large, largest,".includes(`${this.fontSize},`)
+    ) {
+      this.fontSize = "default";
+    }
 
-    if (!this.showInfo || !'true, false,'.includes(`${this.showInfo},`)) { this.showInfo = 'true'; }
-    if (!this.allowServerSelection || !'true, false,'.includes(`${this.allowServerSelection},`)) { this.allowServerSelection = 'true'; }
-    if (!this.allowAuthentication || !'true, false,'.includes(`${this.allowAuthentication},`)) { this.allowAuthentication = 'true'; }
-    if (!this.allowSchemaDescriptionExpandToggle || !'true, false,'.includes(`${this.allowSchemaDescriptionExpandToggle},`)) { this.allowSchemaDescriptionExpandToggle = 'true'; }
+    if (!this.showInfo || !"true, false,".includes(`${this.showInfo},`)) {
+      this.showInfo = "true";
+    }
+    if (
+      !this.allowServerSelection ||
+      !"true, false,".includes(`${this.allowServerSelection},`)
+    ) {
+      this.allowServerSelection = "true";
+    }
+    if (
+      !this.allowAuthentication ||
+      !"true, false,".includes(`${this.allowAuthentication},`)
+    ) {
+      this.allowAuthentication = "true";
+    }
+    if (
+      !this.allowSchemaDescriptionExpandToggle ||
+      !"true, false,".includes(`${this.allowSchemaDescriptionExpandToggle},`)
+    ) {
+      this.allowSchemaDescriptionExpandToggle = "true";
+    }
 
-    if (!this.showSideNav || !'true false'.includes(this.showSideNav)) { this.showSideNav = 'true'; }
-    if (!this.showComponents || !'true false'.includes(this.showComponents)) { this.showComponents = 'false'; }
-    if (!this.infoDescriptionHeadingsInNavBar || !'true, false,'.includes(`${this.infoDescriptionHeadingsInNavBar},`)) { this.infoDescriptionHeadingsInNavBar = 'false'; }
-    if (!this.fetchCredentials || !'omit, same-origin, include,'.includes(`${this.fetchCredentials},`)) { this.fetchCredentials = ''; }
-    if (!this.matchType || !'includes regex'.includes(this.matchType)) { this.matchType = 'includes'; }
+    if (!this.showSideNav || !"true false".includes(this.showSideNav)) {
+      this.showSideNav = "true";
+    }
+    if (!this.showComponents || !"true false".includes(this.showComponents)) {
+      this.showComponents = "false";
+    }
+    if (
+      !this.infoDescriptionHeadingsInNavBar ||
+      !"true, false,".includes(`${this.infoDescriptionHeadingsInNavBar},`)
+    ) {
+      this.infoDescriptionHeadingsInNavBar = "false";
+    }
+    if (
+      !this.fetchCredentials ||
+      !"omit, same-origin, include,".includes(`${this.fetchCredentials},`)
+    ) {
+      this.fetchCredentials = "";
+    }
+    if (!this.matchType || !"includes regex".includes(this.matchType)) {
+      this.matchType = "includes";
+    }
 
-    if (!this.showAdvancedSearchDialog) { this.showAdvancedSearchDialog = false; }
+    if (!this.showAdvancedSearchDialog) {
+      this.showAdvancedSearchDialog = false;
+    }
 
     marked.setOptions({
       highlight: (code, lang) => {
@@ -479,9 +662,13 @@ export default class RapiDoc extends LitElement {
       },
     });
 
-    window.addEventListener('hashchange', () => {
-      this.scrollTo(window.location.hash.substring(1));
-    }, true);
+    window.addEventListener(
+      "hashchange",
+      () => {
+        this.scrollTo(window.location.hash.substring(1));
+      },
+      true
+    );
   }
 
   // Cleanup
@@ -494,7 +681,10 @@ export default class RapiDoc extends LitElement {
 
   infoDescriptionHeadingRenderer() {
     const renderer = new marked.Renderer();
-    renderer.heading = ((text, level, raw, slugger) => `<h${level} class="observe-me" id="${slugger.slug(raw)}">${text}</h${level}>`);
+    renderer.heading = (text, level, raw, slugger) =>
+      `<h${level} class="observe-me" id="${slugger.slug(
+        raw
+      )}">${text}</h${level}>`;
     return renderer;
   }
 
@@ -505,14 +695,14 @@ export default class RapiDoc extends LitElement {
 
   observeExpandedContent() {
     // Main Container
-    const observeOverviewEls = this.shadowRoot.querySelectorAll('.observe-me');
+    const observeOverviewEls = this.shadowRoot.querySelectorAll(".observe-me");
     observeOverviewEls.forEach((targetEl) => {
       this.intersectionObserver.observe(targetEl);
     });
   }
 
   attributeChangedCallback(name, oldVal, newVal) {
-    if (name === 'spec-url') {
+    if (name === "spec-url") {
       if (oldVal !== newVal) {
         // put it at the end of event-loop to load all the attributes
         window.setTimeout(async () => {
@@ -524,8 +714,8 @@ export default class RapiDoc extends LitElement {
         }, 0);
       }
     }
-    if (name === 'render-style') {
-      if (newVal === 'read') {
+    if (name === "render-style") {
+      if (newVal === "read") {
         window.setTimeout(() => {
           this.observeExpandedContent();
         }, 100);
@@ -533,43 +723,58 @@ export default class RapiDoc extends LitElement {
         this.intersectionObserver.disconnect();
       }
     }
-    if (name === 'api-key-name' || name === 'api-key-location' || name === 'api-key-value') {
+    if (
+      name === "api-key-name" ||
+      name === "api-key-location" ||
+      name === "api-key-value"
+    ) {
       let updateSelectedApiKey = false;
-      let apiKeyName = '';
-      let apiKeyLocation = '';
-      let apiKeyValue = '';
+      let apiKeyName = "";
+      let apiKeyLocation = "";
+      let apiKeyValue = "";
 
-      if (name === 'api-key-name') {
-        if (this.getAttribute('api-key-location') && this.getAttribute('api-key-value')) {
+      if (name === "api-key-name") {
+        if (
+          this.getAttribute("api-key-location") &&
+          this.getAttribute("api-key-value")
+        ) {
           apiKeyName = newVal;
-          apiKeyLocation = this.getAttribute('api-key-location');
-          apiKeyValue = this.getAttribute('api-key-value');
+          apiKeyLocation = this.getAttribute("api-key-location");
+          apiKeyValue = this.getAttribute("api-key-value");
           updateSelectedApiKey = true;
         }
-      } else if (name === 'api-key-location') {
-        if (this.getAttribute('api-key-name') && this.getAttribute('api-key-value')) {
+      } else if (name === "api-key-location") {
+        if (
+          this.getAttribute("api-key-name") &&
+          this.getAttribute("api-key-value")
+        ) {
           apiKeyLocation = newVal;
-          apiKeyName = this.getAttribute('api-key-name');
-          apiKeyValue = this.getAttribute('api-key-value');
+          apiKeyName = this.getAttribute("api-key-name");
+          apiKeyValue = this.getAttribute("api-key-value");
           updateSelectedApiKey = true;
         }
-      } else if (name === 'api-key-value') {
-        if (this.getAttribute('api-key-name') && this.getAttribute('api-key-location')) {
+      } else if (name === "api-key-value") {
+        if (
+          this.getAttribute("api-key-name") &&
+          this.getAttribute("api-key-location")
+        ) {
           apiKeyValue = newVal;
-          apiKeyLocation = this.getAttribute('api-key-location');
-          apiKeyName = this.getAttribute('api-key-name');
+          apiKeyLocation = this.getAttribute("api-key-location");
+          apiKeyName = this.getAttribute("api-key-name");
           updateSelectedApiKey = true;
         }
       }
 
       if (updateSelectedApiKey) {
         if (this.resolvedSpec) {
-          const rapiDocApiKey = this.resolvedSpec.securitySchemes.find((v) => v.securitySchemeId === rapidocApiKey);
+          const rapiDocApiKey = this.resolvedSpec.securitySchemes.find(
+            (v) => v.securitySchemeId === rapidocApiKey
+          );
           if (!rapiDocApiKey) {
             this.resolvedSpec.securitySchemes.push({
               securitySchemeId: rapidocApiKey,
-              description: 'api-key provided in rapidoc element attributes',
-              type: 'apiKey',
+              description: "api-key provided in rapidoc element attributes",
+              type: "apiKey",
               name: apiKeyName,
               in: apiKeyLocation,
               value: apiKeyValue,
@@ -589,20 +794,26 @@ export default class RapiDoc extends LitElement {
   }
 
   onSepcUrlChange() {
-    this.setAttribute('spec-url', this.shadowRoot.getElementById('spec-url').value);
+    this.setAttribute(
+      "spec-url",
+      this.shadowRoot.getElementById("spec-url").value
+    );
   }
 
   onSepcFileChange(e) {
-    this.setAttribute('spec-file', this.shadowRoot.getElementById('spec-file').value);
+    this.setAttribute(
+      "spec-file",
+      this.shadowRoot.getElementById("spec-file").value
+    );
     const specFile = e.target.files[0];
     const reader = new FileReader();
     reader.onload = () => {
       try {
         const specObj = JSON.parse(reader.result);
         this.loadSpec(specObj);
-        this.shadowRoot.getElementById('spec-url').value = '';
+        this.shadowRoot.getElementById("spec-url").value = "";
       } catch (err) {
-        console.error('RapiDoc: Unable to read or parse json'); // eslint-disable-line no-console
+        console.error("RapiDoc: Unable to read or parse json"); // eslint-disable-line no-console
       }
     };
     // Read the Text file
@@ -610,35 +821,41 @@ export default class RapiDoc extends LitElement {
   }
 
   onFileLoadClick() {
-    this.shadowRoot.getElementById('spec-file').click();
+    this.shadowRoot.getElementById("spec-file").click();
   }
 
   onSearchChange(e) {
     this.matchPaths = e.target.value;
-    this.resolvedSpec.tags.forEach((tag) => tag.paths.filter((v) => {
-      if (this.matchPaths) {
-        // v.expanded = false;
-        if (pathIsInSearch(this.matchPaths, v, this.matchType)) {
-          tag.expanded = true;
+    this.resolvedSpec.tags.forEach((tag) =>
+      tag.paths.filter((v) => {
+        if (this.matchPaths) {
+          // v.expanded = false;
+          if (pathIsInSearch(this.matchPaths, v, this.matchType)) {
+            tag.expanded = true;
+          }
         }
-      }
-    }));
-    this.resolvedSpec.components.forEach((component) => component.subComponents.filter((v) => {
-      v.expanded = false;
-      if (!this.matchPaths || componentIsInSearch(this.matchPaths, v)) {
-        v.expanded = true;
-      }
-    }));
+      })
+    );
+    this.resolvedSpec.components.forEach((component) =>
+      component.subComponents.filter((v) => {
+        v.expanded = false;
+        if (!this.matchPaths || componentIsInSearch(this.matchPaths, v)) {
+          v.expanded = true;
+        }
+      })
+    );
     this.requestUpdate();
   }
 
   onClearSearch() {
-    const searchEl = this.shadowRoot.getElementById('nav-bar-search');
-    searchEl.value = '';
-    this.matchPaths = '';
-    this.resolvedSpec.components.forEach((component) => component.subComponents.filter((v) => {
-      v.expanded = true;
-    }));
+    const searchEl = this.shadowRoot.getElementById("nav-bar-search");
+    searchEl.value = "";
+    this.matchPaths = "";
+    this.resolvedSpec.components.forEach((component) =>
+      component.subComponents.filter((v) => {
+        v.expanded = true;
+      })
+    );
   }
 
   onShowSearchModalClicked() {
@@ -648,7 +865,7 @@ export default class RapiDoc extends LitElement {
   // Event Handler on Dialog-Box is opened
   async onOpenSearchDialog(e) {
     // Set focus to text input
-    const inputEl = e.detail.querySelector('input');
+    const inputEl = e.detail.querySelector("input");
     await sleep(0);
     if (inputEl) {
       inputEl.focus();
@@ -660,7 +877,7 @@ export default class RapiDoc extends LitElement {
     if (!specUrl) {
       return;
     }
-    this.matchPaths = '';
+    this.matchPaths = "";
     try {
       this.resolvedSpec = {
         specLoadError: false,
@@ -672,13 +889,13 @@ export default class RapiDoc extends LitElement {
       const spec = await ProcessSpec.call(
         this,
         specUrl,
-        this.generateMissingTags === 'true',
-        this.sortTags === 'true',
-        this.getAttribute('sort-endpoints-by'),
-        this.getAttribute('api-key-name'),
-        this.getAttribute('api-key-location'),
-        this.getAttribute('api-key-value'),
-        this.getAttribute('server-url'),
+        this.generateMissingTags === "true",
+        this.sortTags === "true",
+        this.getAttribute("sort-endpoints-by"),
+        this.getAttribute("api-key-name"),
+        this.getAttribute("api-key-location"),
+        this.getAttribute("api-key-value"),
+        this.getAttribute("server-url")
       );
       this.loading = false;
       this.afterSpecParsedAndValidated(spec);
@@ -686,7 +903,9 @@ export default class RapiDoc extends LitElement {
       this.loading = false;
       this.loadFailed = true;
       this.resolvedSpec = null;
-      console.error(`RapiDoc: Unable to resolve the API spec..  ${err.message}`); // eslint-disable-line no-console
+      console.error(
+        `RapiDoc: Unable to resolve the API spec..  ${err.message}`
+      ); // eslint-disable-line no-console
     }
   }
 
@@ -700,7 +919,9 @@ export default class RapiDoc extends LitElement {
           computedUrl: this.serverUrl,
         };
       } else if (this.resolvedSpec.servers) {
-        this.selectedServer = this.resolvedSpec.servers.find((v) => (v.url === this.defaultApiServerUrl));
+        this.selectedServer = this.resolvedSpec.servers.find(
+          (v) => v.url === this.defaultApiServerUrl
+        );
       }
     }
     if (!this.selectedServer) {
@@ -709,12 +930,12 @@ export default class RapiDoc extends LitElement {
       }
     }
     this.requestUpdate();
-    const specLoadedEvent = new CustomEvent('spec-loaded', { detail: spec });
+    const specLoadedEvent = new CustomEvent("spec-loaded", { detail: spec });
     this.dispatchEvent(specLoadedEvent);
 
     // Initiate IntersectionObserver and put it at the end of event loop, to allow loading all the child elements (must for larger specs)
     this.intersectionObserver.disconnect();
-    if (this.renderStyle === 'read') {
+    if (this.renderStyle === "read") {
       await sleep(100);
       this.observeExpandedContent(); // This will auto-highlight the selected nav-item in read-mode
     }
@@ -722,13 +943,15 @@ export default class RapiDoc extends LitElement {
     // On first time Spec load, try to navigate to location hash if provided
     const locationHash = window.location.hash?.substring(1);
     if (locationHash) {
-      if (this.renderStyle === 'view') {
+      if (this.renderStyle === "view") {
         this.expandAndGotoOperation(locationHash, true, true);
       } else {
         this.scrollTo(locationHash);
       }
-    } else if (this.renderStyle === 'focused') {
-      const defaultElementId = this.showInfo ? 'overview' : this.resolvedSpec.tags[0]?.paths[0];
+    } else if (this.renderStyle === "focused") {
+      const defaultElementId = this.showInfo
+        ? "overview"
+        : this.resolvedSpec.tags[0]?.paths[0];
       this.scrollTo(defaultElementId);
     }
   }
@@ -739,8 +962,13 @@ export default class RapiDoc extends LitElement {
     }
     // Expand full operation and tag
     let isExpandingNeeded = true;
-    const tmpElementId = elementId.indexOf('#') === -1 ? elementId : elementId.substring(1);
-    if (tmpElementId.startsWith('overview') || tmpElementId === 'servers' || tmpElementId === 'auth') {
+    const tmpElementId =
+      elementId.indexOf("#") === -1 ? elementId : elementId.substring(1);
+    if (
+      tmpElementId.startsWith("overview") ||
+      tmpElementId === "servers" ||
+      tmpElementId === "auth"
+    ) {
       isExpandingNeeded = false;
     } else {
       for (let i = 0; i < this.resolvedSpec.tags?.length; i++) {
@@ -761,36 +989,45 @@ export default class RapiDoc extends LitElement {
       if (isExpandingNeeded) {
         this.requestUpdate();
       }
-      window.setTimeout(() => {
-        const gotoEl = this.shadowRoot.getElementById(tmpElementId);
-        if (gotoEl) {
-          gotoEl.scrollIntoView({ behavior: 'auto', block: 'start' });
-          if (this.updateRoute === 'true') {
-            window.history.replaceState(null, null, `${this.routePrefix || '#'}${tmpElementId}`);
+      window.setTimeout(
+        () => {
+          const gotoEl = this.shadowRoot.getElementById(tmpElementId);
+          if (gotoEl) {
+            gotoEl.scrollIntoView({ behavior: "auto", block: "start" });
+            if (this.updateRoute === "true") {
+              window.history.replaceState(
+                null,
+                null,
+                `${this.routePrefix || "#"}${tmpElementId}`
+              );
+            }
           }
-        }
-      }, isExpandingNeeded ? 150 : 0);
+        },
+        isExpandingNeeded ? 150 : 0
+      );
     }
   }
 
   isValidTopId(id) {
-    return (id.startsWith('overview') || id === 'servers' || id === 'auth');
+    return id.startsWith("overview") || id === "servers" || id === "auth";
   }
 
   isValidPathId(id) {
-    if (id === 'overview' && this.showInfo) {
+    if (id === "overview" && this.showInfo) {
       return true;
     }
-    if (id === 'servers' && this.allowServerSelection) {
+    if (id === "servers" && this.allowServerSelection) {
       return true;
     }
-    if (id === 'auth' && this.allowAuthentication) {
+    if (id === "auth" && this.allowAuthentication) {
       return true;
     }
-    if (id.startsWith('tag--')) {
+    if (id.startsWith("tag--")) {
       return this.resolvedSpec?.tags?.find((tag) => tag.elementId === id);
     }
-    return this.resolvedSpec?.tags?.find((tag) => tag.paths.find((path) => path.elementId === id));
+    return this.resolvedSpec?.tags?.find((tag) =>
+      tag.paths.find((path) => path.elementId === id)
+    );
   }
 
   onIntersect(entries) {
@@ -799,20 +1036,30 @@ export default class RapiDoc extends LitElement {
     }
     entries.forEach((entry) => {
       if (entry.isIntersecting && entry.intersectionRatio > 0) {
-        const oldNavEl = this.shadowRoot.querySelector('.nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active');
-        const newNavEl = this.shadowRoot.getElementById(`link-${entry.target.id}`);
+        const oldNavEl = this.shadowRoot.querySelector(
+          ".nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active"
+        );
+        const newNavEl = this.shadowRoot.getElementById(
+          `link-${entry.target.id}`
+        );
 
         // Add active class in the new element
         if (newNavEl) {
-          if (this.updateRoute === 'true') {
-            window.history.replaceState(null, null, `${window.location.href.split('#')[0]}${this.routePrefix || '#'}${entry.target.id}`);
+          if (this.updateRoute === "true") {
+            window.history.replaceState(
+              null,
+              null,
+              `${window.location.href.split("#")[0]}${this.routePrefix || "#"}${
+                entry.target.id
+              }`
+            );
           }
-          newNavEl.scrollIntoView({ behavior: 'auto', block: 'center' });
-          newNavEl.classList.add('active');
+          newNavEl.scrollIntoView({ behavior: "auto", block: "center" });
+          newNavEl.classList.add("active");
         }
         // Remove active class from previous element
         if (oldNavEl) {
-          oldNavEl.classList.remove('active');
+          oldNavEl.classList.remove("active");
         }
       }
     });
@@ -820,11 +1067,13 @@ export default class RapiDoc extends LitElement {
 
   // Called by anchor tags created using markdown
   handleHref(e) {
-    if (e.target.tagName.toLowerCase() === 'a') {
-      if (e.target.getAttribute('href').startsWith('#')) {
-        const gotoEl = this.shadowRoot.getElementById(e.target.getAttribute('href').replace('#', ''));
+    if (e.target.tagName.toLowerCase() === "a") {
+      if (e.target.getAttribute("href").startsWith("#")) {
+        const gotoEl = this.shadowRoot.getElementById(
+          e.target.getAttribute("href").replace("#", "")
+        );
         if (gotoEl) {
-          gotoEl.scrollIntoView({ behavior: 'auto', block: 'start' });
+          gotoEl.scrollIntoView({ behavior: "auto", block: "start" });
         }
       }
     }
@@ -840,7 +1089,7 @@ export default class RapiDoc extends LitElement {
    *  2. Scroll to the element
    *  3. Activate IntersectionObserver (after little delay)
    *
-  */
+   */
   async scrollToEventTarget(event, scrollNavItemToView = true) {
     const navEl = event.currentTarget;
     if (!navEl.dataset.contentId) {
@@ -855,39 +1104,43 @@ export default class RapiDoc extends LitElement {
 
   // Public Method (scrolls to a given path and highlights the left-nav selection)
   async scrollTo(elementId, expandPath = true, scrollNavItemToView = true) {
-    if (this.renderStyle === 'focused') {
+    if (this.renderStyle === "focused") {
       // for focused mode update this.focusedElementId to update the rendering, else it wont find the needed html elements
       // focusedElementId will get validated in the template
       this.focusedElementId = elementId;
       await sleep(0);
     }
-    if (this.renderStyle === 'view') {
+    if (this.renderStyle === "view") {
       this.expandAndGotoOperation(elementId, expandPath, true);
     } else {
       let isValidElementId = false;
       const contentEl = this.shadowRoot.getElementById(elementId);
       if (contentEl) {
         isValidElementId = true;
-        contentEl.scrollIntoView({ behavior: 'auto', block: 'start' });
+        contentEl.scrollIntoView({ behavior: "auto", block: "start" });
       } else {
         isValidElementId = false;
       }
       if (isValidElementId) {
         // for focused style it is important to reset request-body-selection and response selection which maintains the state for in case of multiple req-body or multiple response mime-type
-        if (this.renderStyle === 'focused') {
-          const requestEl = this.shadowRoot.querySelector('api-request');
+        if (this.renderStyle === "focused") {
+          const requestEl = this.shadowRoot.querySelector("api-request");
           if (requestEl) {
             requestEl.resetRequestBodySelection();
           }
-          const responseEl = this.shadowRoot.querySelector('api-response');
+          const responseEl = this.shadowRoot.querySelector("api-response");
           if (responseEl) {
             responseEl.resetSelection();
           }
         }
 
         // Update Location Hash
-        if (this.updateRoute === 'true') {
-          window.history.replaceState(null, null, `${this.routePrefix || '#'}${elementId}`);
+        if (this.updateRoute === "true") {
+          window.history.replaceState(
+            null,
+            null,
+            `${this.routePrefix || "#"}${elementId}`
+          );
         }
 
         // Update NavBar View and Styles
@@ -895,14 +1148,16 @@ export default class RapiDoc extends LitElement {
 
         if (newNavEl) {
           if (scrollNavItemToView) {
-            newNavEl.scrollIntoView({ behavior: 'auto', block: 'center' });
+            newNavEl.scrollIntoView({ behavior: "auto", block: "center" });
           }
           await sleep(0);
-          const oldNavEl = this.shadowRoot.querySelector('.nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active');
+          const oldNavEl = this.shadowRoot.querySelector(
+            ".nav-bar-tag.active, .nav-bar-path.active, .nav-bar-info.active, .nav-bar-h1.active, .nav-bar-h2.active, .operations.active"
+          );
           if (oldNavEl) {
-            oldNavEl.classList.remove('active');
+            oldNavEl.classList.remove("active");
           }
-          newNavEl.classList.add('active'); // must add the class after scrolling
+          newNavEl.classList.add("active"); // must add the class after scrolling
           // this.requestUpdate();
         }
       }
@@ -916,7 +1171,7 @@ export default class RapiDoc extends LitElement {
 
   // Public Method - to update security-scheme of type apiKey or OAuth
   setApiKey(securitySchemeId, apiKeyValue) {
-    return applyApiKey.call(this, securitySchemeId, '', '', apiKeyValue);
+    return applyApiKey.call(this, securitySchemeId, "", "", apiKeyValue);
   }
 
   // Public Method
@@ -936,14 +1191,24 @@ export default class RapiDoc extends LitElement {
     clearTimeout(this.timeoutId);
     this.timeoutId = setTimeout(() => {
       let searchInputEl;
-      if (eventTargetEl.type === 'text') {
+      if (eventTargetEl.type === "text") {
         searchInputEl = eventTargetEl;
       } else {
-        searchInputEl = eventTargetEl.closest('.advanced-search-options').querySelector('input[type=text]');
+        searchInputEl = eventTargetEl
+          .closest(".advanced-search-options")
+          .querySelector("input[type=text]");
       }
-      const searcOptions = [...eventTargetEl.closest('.advanced-search-options').querySelectorAll('input:checked')].map((v) => v.id);
-      this.advancedSearchMatches = advancedSearch(searchInputEl.value, this.resolvedSpec.tags, searcOptions);
+      const searcOptions = [
+        ...eventTargetEl
+          .closest(".advanced-search-options")
+          .querySelectorAll("input:checked"),
+      ].map((v) => v.id);
+      this.advancedSearchMatches = advancedSearch(
+        searchInputEl.value,
+        this.resolvedSpec.tags,
+        searcOptions
+      );
     }, delay);
   }
 }
-customElements.define('rapi-doc', RapiDoc);
+customElements.define("rapi-doc", RapiDoc);
